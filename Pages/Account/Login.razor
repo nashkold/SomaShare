@@ -1,0 +1,33 @@
+﻿@page "/account/login"
+
+<div class="container mt-5" style="max-width: 450px;">
+    <h3 class="mb-4">Login to SomaShare</h3>
+
+    @if (error == "fail")
+    {
+        <div class="alert alert-danger">Invalid email or password.</div>
+    }
+
+    <form method="post" action="/LoginHandler">
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input name="Email" type="email" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input name="Password" type="password" class="form-control" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+        <a href="/account/register" class="btn btn-link w-100 mt-2">
+            Don't have an account? Register
+        </a>
+    </form>
+</div>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? error { get; set; }
+}

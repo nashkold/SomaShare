@@ -1,0 +1,121 @@
+﻿@page "/account/register"
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<h3>Register</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Full Name</label>
+        <InputText @bind-Value="registerModel.FullName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>University Email (.ac.za only)</label>
+        <InputText @bind-Value="registerModel.Email" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Campus</label>
+        <InputText @bind-Value="registerModel.Campus" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Role</label>
+        <InputSelect @bind-Value="registerModel.Role" class="form-control">
+            <option value="Buyer">Buyer</option>
+            <option value="Seller">Seller</option>
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText @bind-Value="registerModel.Password"
+                   type="password" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register</button>
+    <a href="/account/login" class="btn btn-link">Already have an account? Login</a>
+</EditForm>
+
+@code {
+    private RegisterModel registerModel = new();
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    private async Task HandleRegister()
+    {
+        // Reset messages
+        errorMessage = "";
+        successMessage = "";
+
+        // University email validation
+        if (!registerModel.Email.EndsWith(".ac.za"))
+        {
+            errorMessage = "Please use your university email address (.ac.za)";
+            StateHasChanged();
+            return;
+        }
+
+        // Check all fields are filled
+        if (string.IsNullOrWhiteSpace(registerModel.FullName) ||
+            string.IsNullOrWhiteSpace(registerModel.Campus) ||
+            string.IsNullOrWhiteSpace(registerModel.Password))
+        {
+            errorMessage = "Please fill in all fields.";
+            StateHasChanged();
+            return;
+        }
+
+        var user = new ApplicationUser
+        {
+            UserName = registerModel.Email,
+            Email = registerModel.Email,
+            FullName = registerModel.FullName,
+            Campus = registerModel.Campus,
+            DateJoined = DateTime.Now,
+            TrustScore = 0
+        };
+
+        var result = await UserManager.CreateAsync(user, registerModel.Password);
+
+        if (result.Succeeded)
+        {
+            await UserManager.AddToRoleAsync(user, registerModel.Role);
+            successMessage = "Registration successful! Redirecting to login...";
+            StateHasChanged();
+            await Task.Delay(2000); // short pause so user sees success message
+            NavigationManager.NavigateTo("/account/login");
+        }
+        else
+        {
+            errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+            StateHasChanged();
+        }
+    }
+
+    public class RegisterModel
+    {
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Campus { get; set; } = "";
+        public string Role { get; set; } = "Buyer";
+        public string Password { get; set; } = "";
+    }
+}

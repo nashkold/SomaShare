@@ -1,0 +1,406 @@
+﻿@* 
+    DASHBOARD PAGE
+    ══════════════
+    Route:   /dashboard
+    Access:  Logged-in users only (@attribute [Authorize])
+    Purpose: Shows the current user's Listings, Offers,
+             Transactions, and Reviews in one place.
+             Covers requirement 3.3 – User Dashboard.
+*@
+
+@page "/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using SomaShare.Data
+@using SomaShare.Models
+@inject ApplicationDbContext Db
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<div class="container mt-4 pb-5">
+
+    @* ── Page Header ────────────────────────────────────────────── *@
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-0">👋 Welcome back, @currentUser?.FullName</h2>
+            <p class="text-muted mb-0 small">@currentUser?.Email · @currentUser?.Campus</p>
+        </div>
+        @* Trust Score — Africanisation requirement (section 6) *@
+        <div class="badge bg-warning text-dark fs-6 px-3 py-2">
+            ⭐ Trust Score: @currentUser?.TrustScore
+        </div>
+    </div>
+
+    @* ── Loading Spinner ─────────────────────────────────────────── *@
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Loading your dashboard…</p>
+        </div>
+    }
+    else
+    {
+        @* ── Summary Cards ─────────────────────────────────────────── *@
+        @* Four quick-glance counters at the top of the dashboard *@
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-primary h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2">📚</div>
+                        <div class="fs-3 fw-bold text-primary">@myListings.Count</div>
+                        <div class="text-muted small">My Listings</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-success h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2">🤝</div>
+                        <div class="fs-3 fw-bold text-success">@myOffers.Count</div>
+                        <div class="text-muted small">My Offers</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-info h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2">💳</div>
+                        <div class="fs-3 fw-bold text-info">@myTransactions.Count</div>
+                        <div class="text-muted small">Transactions</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-warning h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2">⭐</div>
+                        <div class="fs-3 fw-bold text-warning">@myReviews.Count</div>
+                        <div class="text-muted small">Reviews</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ════════════════════════════════════════════════════════════
+           SECTION 1 — MY LISTINGS
+           Textbooks this user posted for sale.
+           SellerId links Textbook → ApplicationUser.
+        ════════════════════════════════════════════════════════════ *@
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">📚 My Listings</h5>
+                <a href="/textbooks" class="btn btn-sm btn-primary">+ Add New</a>
+            </div>
+            <div class="card-body p-0">
+                @if (!myListings.Any())
+                {
+                    <p class="text-muted text-center py-4 mb-0">
+                        You haven't listed any textbooks yet.
+                        <a href="/textbooks">List one now →</a>
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Author</th>
+                                    <th>Condition</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th>Date Posted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var book in myListings)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@book.Title</td>
+                                        <td>@book.Author</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@book.Condition</span>
+                                        </td>
+                                        <td class="text-success fw-bold">
+                                            R @book.Price.ToString("0.00")
+                                        </td>
+                                        <td>
+                                            @if (book.IsAvailable)
+                                            {
+                                                <span class="badge bg-success">Available</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Sold</span>
+                                            }
+                                        </td>
+                                        <td class="text-muted small">
+                                            @book.DatePosted.ToString("dd MMM yyyy")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ════════════════════════════════════════════════════════════
+           SECTION 2 — MY OFFERS
+           Offers this user made on other people's listings.
+           BuyerId links Offer → ApplicationUser.
+           Status values: "Pending" | "Accepted" | "Rejected"
+        ════════════════════════════════════════════════════════════ *@
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">🤝 My Offers</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (!myOffers.Any())
+                {
+                    <p class="text-muted text-center py-4 mb-0">
+                        You haven't made any offers yet.
+                        <a href="/textbooks">Browse listings →</a>
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Textbook</th>
+                                    <th>Offer Amount</th>
+                                    <th>Status</th>
+                                    <th>Date Made</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var offer in myOffers)
+                                {
+                                    @* Pick badge colour based on offer status *@
+                                    var badgeClass = offer.Status switch
+                                    {
+                                        "Accepted" => "bg-success",
+                                        "Rejected" => "bg-danger",
+                                        _ => "bg-warning text-dark"   // Pending
+                                    };
+                                    <tr>
+                                        <td class="fw-semibold">
+                                            @(offer.Textbook?.Title ?? "—")
+                                        </td>
+                                        <td class="fw-bold text-success">
+                                            R @offer.OfferAmount.ToString("0.00")
+                                        </td>
+                                        <td>
+                                            <span class="badge @badgeClass">@offer.Status</span>
+                                        </td>
+                                        <td class="text-muted small">
+                                            @offer.DateMade.ToString("dd MMM yyyy")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ════════════════════════════════════════════════════════════
+           SECTION 3 — MY TRANSACTIONS
+           Transactions where this user was the buyer.
+           Transaction → Offer → Textbook (two levels of .Include())
+           PaymentMethod includes "Cash on Meetup" (Africanisation).
+        ════════════════════════════════════════════════════════════ *@
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">💳 My Transactions</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (!myTransactions.Any())
+                {
+                    <p class="text-muted text-center py-4 mb-0">No transactions yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Textbook</th>
+                                    <th>Payment Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tx in myTransactions)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">
+                                            @(tx.Offer?.Textbook?.Title ?? "—")
+                                        </td>
+                                        <td>@tx.PaymentMethod</td>
+                                        <td>
+                                            @if (tx.IsComplete)
+                                            {
+                                                <span class="badge bg-success">Complete</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            }
+                                        </td>
+                                        <td class="text-muted small">
+                                            @tx.TransactionDate.ToString("dd MMM yyyy")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ════════════════════════════════════════════════════════════
+           SECTION 4 — MY REVIEWS
+           Reviews other users wrote about this user (RevieweeId).
+           Shows star rating (1–5) and average score.
+        ════════════════════════════════════════════════════════════ *@
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">⭐ My Reviews</h5>
+                @if (myReviews.Any())
+                {
+                    <span class="badge bg-warning text-dark fs-6">
+                        Avg: @myReviews.Average(r => r.Rating).ToString("0.0") / 5
+                    </span>
+                }
+            </div>
+            <div class="card-body p-0">
+                @if (!myReviews.Any())
+                {
+                    <p class="text-muted text-center py-4 mb-0">
+                        No reviews yet. Complete a transaction to receive one!
+                    </p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var review in myReviews)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>@(review.Reviewer?.FullName ?? "Anonymous")</strong>
+                                    <span>
+                                        @* Render filled stars up to rating, empty stars after *@
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <span class="@(i <= review.Rating ? "text-warning" : "text-muted")">
+                                                ★
+                                            </span>
+                                        }
+                                    </span>
+                                </div>
+                                <p class="mb-1 text-muted">@review.Comment</p>
+                                <small class="text-muted">
+                                    @review.DatePosted.ToString("dd MMM yyyy")
+                                </small>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+    }
+    @* end else (not loading) *@
+
+</div>
+
+@code {
+
+    // ── Fields ────────────────────────────────────────────────────────
+    // These store the data fetched from the database.
+    private ApplicationUser? currentUser = null;
+    private List<Textbook> myListings = new();
+    private List<Offer> myOffers = new();
+    private List<Transaction> myTransactions = new();
+    private List<Review> myReviews = new();
+    private bool isLoading = true;
+
+    // ── OnInitializedAsync ────────────────────────────────────────────
+    // Blazor calls this automatically when the page loads.
+    // It's async because database calls take time — we don't want
+    // the page to freeze while waiting.
+    protected override async Task OnInitializedAsync()
+    {
+        // Step 1: Find out who is currently logged in
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUser = await UserManager.GetUserAsync(authState.User);
+
+        // Step 2: Guard — if nobody is logged in, redirect to login
+        if (currentUser == null)
+        {
+            NavigationManager.NavigateTo("/account/login", forceLoad: true);
+            return;
+        }
+
+        // Step 3: Load all dashboard data from the database
+        await LoadDashboardData(currentUser.Id);
+
+        isLoading = false;
+    }
+
+    // ── LoadDashboardData ─────────────────────────────────────────────
+    // Runs 4 separate database queries — one per dashboard section.
+    //
+    // .Include()        = SQL JOIN (load a related table)
+    // .ThenInclude()    = JOIN a second level deep
+    // .Where()          = SQL WHERE (filter by current user)
+    // .OrderByDescending() = SQL ORDER BY … DESC
+    // .ToListAsync()    = execute the query and return a List<T>
+    //
+    private async Task LoadDashboardData(string userId)
+    {
+        // 1. Textbooks I posted (SellerId = me)
+        myListings = await Db.Textbooks
+            .Where(t => t.SellerId == userId)
+            .OrderByDescending(t => t.DatePosted)
+            .ToListAsync();
+
+        // 2. Offers I made (BuyerId = me)
+        //    .Include(o => o.Textbook) loads the Textbook row
+        //    so we can display the book title in the table.
+        myOffers = await Db.Offers
+            .Include(o => o.Textbook)
+            .Where(o => o.BuyerId == userId)
+            .OrderByDescending(o => o.DateMade)
+            .ToListAsync();
+
+        // 3. Transactions where I was the buyer
+        //    Two-level include:  Transaction → Offer → Textbook
+        myTransactions = await Db.Transactions
+            .Include(t => t.Offer)
+                .ThenInclude(o => o.Textbook)
+            .Where(t => t.Offer.BuyerId == userId)
+            .OrderByDescending(t => t.TransactionDate)
+            .ToListAsync();
+
+        // 4. Reviews written ABOUT me (RevieweeId = me)
+        //    Include Reviewer so we can show their name.
+        myReviews = await Db.Reviews
+            .Include(r => r.Reviewer)
+            .Where(r => r.RevieweeId == userId)
+            .OrderByDescending(r => r.DatePosted)
+            .ToListAsync();
+    }
+}

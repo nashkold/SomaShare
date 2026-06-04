@@ -1,0 +1,63 @@
+﻿@page "/account/profile"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h3>Profile</h3>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (user != null)
+{
+    <EditForm Model="@user" OnValidSubmit="HandleUpdate">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label>Full Name</label>
+            <InputText @bind-Value="user.FullName" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Campus</label>
+            <InputText @bind-Value="user.Campus" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Email</label>
+            <input value="@user.Email" class="form-control" disabled />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Profile</button>
+    </EditForm>
+}
+
+@code {
+    private ApplicationUser? user;
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authState.User;
+
+        if (currentUser.Identity?.IsAuthenticated == true)
+        {
+            user = await UserManager.GetUserAsync(currentUser);
+        }
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (user != null)
+        {
+            var result = await UserManager.UpdateAsync(user);
+            if (result.Succeeded)
+                successMessage = "Profile updated successfully!";
+        }
+    }
+}

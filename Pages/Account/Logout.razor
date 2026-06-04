@@ -1,0 +1,17 @@
+﻿@page "/account/logout"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<h3>Logout</h3>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/account/login");
+    }
+}
+
