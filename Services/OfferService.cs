@@ -65,5 +65,24 @@ namespace SomaShare.Services
                 await _context.SaveChangesAsync();
             }
         }
+    
+    public async Task<List<Offer>> GetOffersByBuyerAsync(string buyerId)
+        {
+            return await _context.Offers
+                .Include(o => o.Textbook)
+                .Where(o => o.BuyerId == buyerId)
+                .OrderByDescending(o => o.DateMade)
+                .ToListAsync();
+        }
+
+        public async Task<List<Offer>> GetOffersForSellerAsync(string sellerId)
+        {
+            return await _context.Offers
+                .Include(o => o.Textbook)
+                .Include(o => o.Buyer)
+                .Where(o => o.Textbook.SellerId == sellerId)
+                .OrderByDescending(o => o.DateMade)
+                .ToListAsync();
+        }
     }
 }
