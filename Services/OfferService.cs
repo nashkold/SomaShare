@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SomaShare.Data;
 using SomaShare.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SomaShare.Services
 {
@@ -25,7 +27,7 @@ namespace SomaShare.Services
         {
             var offer = await _context.Offers
                 .Include(o => o.Textbook)
-                .FirstOrDefaultAsync(o => o.OfferId == offerId); // fixed: OfferId not Id
+                .FirstOrDefaultAsync(o => o.OfferId == offerId);
 
             if (offer == null) return;
 
@@ -45,7 +47,7 @@ namespace SomaShare.Services
             // Create a transaction for this accepted offer
             var transaction = new Transaction
             {
-                OfferId = offer.OfferId, // fixed: OfferId not Id
+                OfferId = offer.OfferId,
                 TransactionDate = DateTime.Now,
                 PaymentMethod = "Cash on Meetup",
                 IsComplete = false
@@ -64,6 +66,25 @@ namespace SomaShare.Services
                 offer.Status = "Rejected";
                 await _context.SaveChangesAsync();
             }
+        }
+
+        // Get all offers on the seller's textbooks
+        public async Task<List<Offer>> GetOffersForSellerAsync(string sellerId)
+        {
+            return await _context.Offers
+                .Include(o => o.Textbook)
+                .Include(o => o.Buyer)
+                .Where(o => o.Textbook.SellerId == sellerId)
+                .ToListAsync();
+        }
+
+        // Get all offers made by a specific buyer
+        public async Task<List<Offer>> GetOffersByBuyerAsync(string buyerId)
+        {
+            return await _context.Offers
+                .Include(o => o.Textbook)
+                .Where(o => o.BuyerId == buyerId)
+                .ToListAsync();
         }
     
     public async Task<List<Offer>> GetOffersByBuyerAsync(string buyerId)

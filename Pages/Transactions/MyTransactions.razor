@@ -1,0 +1,111 @@
+﻿@page "/offers/transactions/mytransactions"
+
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@using SomaShare.Services
+
+@inject ITransactionService TransactionService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>My Transactions</h3>
+
+@if (isLoading)
+{
+    <p>Loading transactions...</p>
+}
+else if (!transactions.Any())
+{
+    <p>No transactions found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Textbook</th>
+                <th>Buyer</th>
+                <th>Seller</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in transactions)
+            {
+                <tr>
+                    <td>@transaction.Offer?.Textbook?.Title</td>
+                    <td>@transaction.Offer?.Buyer?.Email</td>
+                    <td>@transaction.Offer?.Textbook?.Seller?.Email</td>
+                    <td>R @transaction.Offer?.OfferAmount.ToString("0.00")</td>
+                    <td>@transaction.TransactionDate.ToShortDateString()</td>
+                    <td>
+                        @if (transaction.IsComplete)
+                        {
+                            <span class="badge bg-success">Complete</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="/offers/transactions/@transaction.TransactionId"
+                           class="btn btn-outline-primary btn-sm me-1">
+                            View
+                        </a>
+
+                        @* Only the seller can mark a transaction as complete *@
+                        @if (!transaction.IsComplete &&
+                             transaction.Offer?.Textbook?.SellerId == currentUserId)
+                        {
+                            <button class="btn btn-success btn-sm"
+                                    @onclick="() => Complete(transaction.TransactionId)">
+                                Complete Transaction
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
+
+@code {
+    private List<Transaction> transactions = new();
+    private string currentUserId = string.Empty;
+    private bool isLoading = true;
+    private string message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user == null) return;
+
+        currentUserId = user.Id;
+        await LoadTransactions();
+    }
+
+    private async Task LoadTransactions()
+    {
+        isLoading = true;
+        transactions = await TransactionService.GetUserTransactionsAsync(currentUserId);
+        isLoading = false;
+    }
+
+    private async Task Complete(int transactionId)
+    {
+        await TransactionService.CompleteTransactionAsync(transactionId);
+        message = "Transaction marked as complete.";
+        await LoadTransactions();
+    }
+}

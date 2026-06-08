@@ -1,0 +1,58 @@
+﻿@page "/offers/make/{TextbookId:int}"
+
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@using SomaShare.Services
+
+@inject IOfferService OfferService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<h3>Make Offer</h3>
+
+<div class="card p-3">
+
+    <div class="mb-3">
+        <label>Offer Amount</label>
+        <InputNumber @bind-Value="OfferAmount" class="form-control" />
+    </div>
+
+    <button class="btn btn-primary" @onclick="SubmitOffer">
+        Submit Offer
+    </button>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public int TextbookId { get; set; }
+
+    private decimal OfferAmount;
+
+    private async Task SubmitOffer()
+    {
+        var authState =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var user =
+            await UserManager.GetUserAsync(authState.User);
+
+        if (user == null)
+            return;
+
+        var offer = new Offer
+        {
+            OfferAmount = OfferAmount,
+            DateMade = DateTime.Now,
+            Status = "Pending",
+            BuyerId = user.Id,
+            TextbookId = TextbookId
+        };
+
+        await OfferService.MakeOfferAsync(offer);
+
+        Navigation.NavigateTo("/offers/myoffers");
+    }
+}
