@@ -1,0 +1,266 @@
+﻿@page "/wantedads"
+
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@using SomaShare.Services
+
+@inject IWantedAdService WantedAdService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Wanted Ads</h3>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success alert-dismissible">
+        @successMessage
+        <button type="button" class="btn-close"
+                @onclick="() => successMessage = string.Empty"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible">
+        @errorMessage
+        <button type="button" class="btn-close"
+                @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@* ── Create / Edit Form ── *@
+<div class="card p-4 mb-4 border-primary">
+
+    <h5>@(editingId == 0 ? "Post a Wanted Ad" : "Edit Wanted Ad")</h5>
+
+    <div class="mb-3">
+        <label class="form-label">Title *</label>
+        <input class="form-control" @bind="formTitle"
+               placeholder="e.g. Looking for Introduction to Economics" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" rows="3" @bind="formDescription"
+                  placeholder="Any edition, must be in good condition..."></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Max Price (R)</label>
+        <input class="form-control" type="number" @bind="formMaxPrice" />
+    </div>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" @onclick="HandleSave">
+            @(editingId == 0 ? "Post Ad" : "Save Changes")
+        </button>
+        @if (editingId != 0)
+        {
+            <button class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+        }
+    </div>
+
+</div>
+
+@* ── My Ads ── *@
+<h5 class="mt-4">My Wanted Ads</h5>
+
+@if (!myAds.Any())
+{
+    <p class="text-muted">You have not posted any wanted ads yet.</p>
+}
+else
+{
+    <table class="table table-bordered mb-4">
+        <thead class="table-light">
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Max Price</th>
+                <th>Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ad in myAds)
+            {
+                <tr>
+                    <td>@ad.Title</td>
+                    <td>@ad.Description</td>
+                    <td>R @ad.MaxPrice.ToString("0.00")</td>
+                    <td>@ad.DatePosted.ToShortDateString()</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => StartEdit(ad)">
+                                Edit
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    @onclick="() => DeleteAd(ad.Id)">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* ── Browse All Ads ── *@
+<h5 class="mt-2">All Wanted Ads</h5>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (!allAds.Any())
+{
+    <p class="text-muted">No wanted ads posted yet.</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-3">
+        @foreach (var ad in allAds)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title">@ad.Title</h6>
+                        <p class="card-text text-muted small">@ad.Description</p>
+                        <p class="card-text">
+                            <span class="fw-bold text-success">
+                                Max: R @ad.MaxPrice.ToString("0.00")
+                            </span>
+                        </p>
+                        <p class="card-text small text-muted">
+                            Posted by @(ad.User?.Email ?? "Unknown")
+                            on @ad.DatePosted.ToShortDateString()
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<WantedAd> allAds = new();
+    private List<WantedAd> myAds = new();
+
+    private string currentUserId = string.Empty;
+    private bool isLoading = true;
+
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    // Form state
+    private int editingId = 0;
+    private string formTitle = string.Empty;
+    private string formDescription = string.Empty;
+    private decimal formMaxPrice = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user != null)
+            currentUserId = user.Id;
+
+        await LoadAds();
+    }
+
+    private async Task LoadAds()
+    {
+        isLoading = true;
+        allAds = await WantedAdService.GetAllAsync();
+        myAds = await WantedAdService.GetUserAdsAsync(currentUserId);
+        isLoading = false;
+    }
+
+    private async Task HandleSave()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(formTitle))
+        {
+            errorMessage = "Title is required.";
+            return;
+        }
+
+        if (formMaxPrice <= 0)
+        {
+            errorMessage = "Max price must be greater than zero.";
+            return;
+        }
+
+        try
+        {
+            if (editingId == 0)
+            {
+                var ad = new WantedAd
+                {
+                    Title = formTitle,
+                    Description = formDescription,
+                    MaxPrice = formMaxPrice,
+                    UserId = currentUserId,
+                    DatePosted = DateTime.Now
+                };
+                await WantedAdService.CreateAsync(ad);
+                successMessage = "Wanted ad posted successfully.";
+            }
+            else
+            {
+                var ad = new WantedAd
+                {
+                    Id = editingId,
+                    Title = formTitle,
+                    Description = formDescription,
+                    MaxPrice = formMaxPrice,
+                    UserId = currentUserId,
+                    DatePosted = DateTime.Now
+                };
+                await WantedAdService.UpdateAsync(ad);
+                successMessage = "Wanted ad updated successfully.";
+            }
+
+            CancelEdit();
+            await LoadAds();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving ad: {ex.Message}";
+        }
+    }
+
+    private void StartEdit(WantedAd ad)
+    {
+        editingId = ad.Id;
+        formTitle = ad.Title;
+        formDescription = ad.Description ?? string.Empty;
+        formMaxPrice = ad.MaxPrice;
+        errorMessage = string.Empty;
+    }
+
+    private async Task DeleteAd(int id)
+    {
+        try
+        {
+            await WantedAdService.DeleteAsync(id);
+            successMessage = "Wanted ad deleted.";
+            await LoadAds();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting ad: {ex.Message}";
+        }
+    }
+
+    private void CancelEdit()
+    {
+        editingId = 0;
+        formTitle = string.Empty;
+        formDescription = string.Empty;
+        formMaxPrice = 0;
+    }
+}

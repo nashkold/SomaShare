@@ -13,6 +13,7 @@ namespace SomaShare.Data
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Advert> Adverts { get; set; }
+        public DbSet<WantedAd> WantedAds { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
