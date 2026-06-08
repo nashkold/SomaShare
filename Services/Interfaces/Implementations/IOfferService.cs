@@ -8,5 +8,7 @@ namespace SomaShare.Services
         Task MakeOfferAsync(Offer offer);
         Task AcceptOfferAsync(int offerId);
         Task RejectOfferAsync(int offerId);
+        Task<List<Offer>> GetOffersForSellerAsync(string sellerId);
+        Task<List<Offer>> GetOffersByBuyerAsync(string buyerId);
     }
 }

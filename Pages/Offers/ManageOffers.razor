@@ -1,5 +1,117 @@
-﻿<h3>ManageOffers</h3>
+﻿@page "/offers/manageoffers"
+
+@using Microsoft.AspNetCore.Identity
+@using SomaShare.Models
+@using SomaShare.Services
+
+@inject IOfferService OfferService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Manage Offers</h3>
+
+@if (!offers.Any())
+{
+    <p>No offers available.</p>
+}
+else
+{
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Book</th>
+                <th>Buyer</th>
+                <th>Offer</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var offer in offers)
+            {
+                <tr>
+
+                    <td>@offer.Textbook?.Title</td>
+
+                    <td>
+                        @offer.Buyer?.Email
+                    </td>
+
+                    <td>
+                        R @offer.OfferAmount
+                    </td>
+
+                    <td>
+                        @offer.Status
+                    </td>
+
+                    <td>
+
+                        @if (offer.Status == "Pending")
+                        {
+                            <button class="btn btn-success btn-sm me-2"
+                                    @onclick="() => AcceptOffer(offer.OfferId)">
+
+                                Accept
+
+                            </button>
+
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => RejectOffer(offer.OfferId)">
+
+                                Reject
+
+                            </button>
+                        }
+
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+}
 
 @code {
 
+    private List<Offer> offers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOffers();
+    }
+
+    private async Task LoadOffers()
+    {
+        var authState =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var user =
+            await UserManager.GetUserAsync(authState.User);
+
+        if (user == null)
+            return;
+
+        offers =
+            await OfferService.GetOffersForSellerAsync(user.Id);
+    }
+
+    private async Task AcceptOffer(int offerId)
+    {
+        await OfferService.AcceptOfferAsync(offerId);
+
+        await LoadOffers();
+    }
+
+    private async Task RejectOffer(int offerId)
+    {
+        await OfferService.RejectOfferAsync(offerId);
+
+        await LoadOffers();
+    }
 }
