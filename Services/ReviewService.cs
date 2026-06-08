@@ -29,5 +29,25 @@ namespace SomaShare.Services
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<Review>> GetUserReviewsAsync(string userId)
+        {
+            return await _context.Reviews
+                .Where(r => r.RevieweeId == userId)
+                .OrderByDescending(r => r.DatePosted)
+                .ToListAsync();
+        }
+
+        public async Task<double> CalculateTrustScoreAsync(string userId)
+        {
+            var reviews = await _context.Reviews
+                .Where(r => r.RevieweeId == userId)
+                .ToListAsync();
+
+            if (!reviews.Any())
+                return 0;
+
+            return reviews.Average(r => r.Rating);
+        }
     }
 }

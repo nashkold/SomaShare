@@ -6,5 +6,9 @@ namespace SomaShare.Services
     public interface IReviewService
     {
         Task AddReviewAsync(Review review);
+
+        Task<List<Review>> GetUserReviewsAsync(string userId);
+
+        Task<double> CalculateTrustScoreAsync(string userId);
     }
 }

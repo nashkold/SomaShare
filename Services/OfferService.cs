@@ -68,26 +68,8 @@ namespace SomaShare.Services
             }
         }
 
-        // Get all offers on the seller's textbooks
-        public async Task<List<Offer>> GetOffersForSellerAsync(string sellerId)
-        {
-            return await _context.Offers
-                .Include(o => o.Textbook)
-                .Include(o => o.Buyer)
-                .Where(o => o.Textbook.SellerId == sellerId)
-                .ToListAsync();
-        }
-
-        // Get all offers made by a specific buyer
+        // Get all offers made by a specific buyer (Sorted by newest)
         public async Task<List<Offer>> GetOffersByBuyerAsync(string buyerId)
-        {
-            return await _context.Offers
-                .Include(o => o.Textbook)
-                .Where(o => o.BuyerId == buyerId)
-                .ToListAsync();
-        }
-    
-    public async Task<List<Offer>> GetOffersByBuyerAsync(string buyerId)
         {
             return await _context.Offers
                 .Include(o => o.Textbook)
@@ -96,6 +78,7 @@ namespace SomaShare.Services
                 .ToListAsync();
         }
 
+        // Get all offers on the seller's textbooks (Sorted by newest)
         public async Task<List<Offer>> GetOffersForSellerAsync(string sellerId)
         {
             return await _context.Offers
