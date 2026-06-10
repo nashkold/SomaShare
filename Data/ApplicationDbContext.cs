@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SomaShare.Models;
+
 namespace SomaShare.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-       : base(options) { }
+            : base(options) { }
 
         public DbSet<Textbook> Textbooks { get; set; }
         public DbSet<Offer> Offers { get; set; }
@@ -14,11 +15,32 @@ namespace SomaShare.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Advert> Adverts { get; set; }
         public DbSet<WantedAd> WantedAds { get; set; }
+        public DbSet<Favourite> Favourites { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Tell EF Core which FK maps to which collection
+            // ── Decimal precision ─────────────────────────────────────────────
+            // SQL Server's default decimal(18,2) truncates silently without this.
+            // 18 digits total, 2 after the decimal point — sufficient for ZAR prices.
+            modelBuilder.Entity<Offer>()
+                .Property(o => o.OfferAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Textbook>()
+                .Property(t => t.Price)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Advert>()
+                .Property(a => a.MaxPrice)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<WantedAd>()
+                .Property(w => w.MaxPrice)
+                .HasPrecision(18, 2);
+
+            // ── Reviews ───────────────────────────────────────────────────────
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Reviewer)
                 .WithMany(u => u.ReviewsGiven)
@@ -31,17 +53,39 @@ namespace SomaShare.Data
                 .HasForeignKey(r => r.RevieweeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ── Offers ────────────────────────────────────────────────────────
             modelBuilder.Entity<Offer>()
-    .HasOne(o => o.Textbook)
-    .WithMany(t => t.Offers)
-    .HasForeignKey(o => o.TextbookId)
-    .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(o => o.Textbook)
+                .WithMany(t => t.Offers)
+                .HasForeignKey(o => o.TextbookId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Offer>()
                 .HasOne(o => o.Buyer)
                 .WithMany()
                 .HasForeignKey(o => o.BuyerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ── Favourites ────────────────────────────────────────────────────
+            // Restrict (not Cascade) on the Textbook FK to avoid the
+            // "multiple cascade paths" error SQL Server raises when a single
+            // Textbook delete could cascade through both Offers and Favourites.
+            modelBuilder.Entity<Favourite>()
+                .HasOne(f => f.Textbook)
+                .WithMany()
+                .HasForeignKey(f => f.TextbookId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Favourite>()
+                .HasOne(f => f.User)
+                .WithMany()
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent a user favouriting the same textbook twice
+            modelBuilder.Entity<Favourite>()
+                .HasIndex(f => new { f.UserId, f.TextbookId })
+                .IsUnique();
         }
     }
 }
