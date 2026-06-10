@@ -8,10 +8,6 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
 
-<a class="skip-link visually-hidden-focusable" href="#main-content">
-    Skip to main content
-</a>
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top"
      role="navigation" aria-label="Main navigation">
     <div class="container-fluid">
@@ -32,25 +28,24 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                 <li class="nav-item">
-                    <NavLink class="nav-link px-2" href="/"
-                             Match="NavLinkMatch.All" aria-label="Home">
+                    <a class="nav-link px-2" href="/" aria-label="Home">
                         🏠 Home
-                    </NavLink>
+                    </a>
                 </li>
 
                 <AuthorizeView>
                     <Authorized>
 
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/textbooks">
+                            <a class="nav-link px-2" href="/textbooks">
                                 📖 Browse
-                            </NavLink>
+                            </a>
                         </li>
 
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/wishlist">
+                            <a class="nav-link px-2" href="/wishlist">
                                 ❤️ Wishlist
-                            </NavLink>
+                            </a>
                         </li>
 
                         <li class="nav-item dropdown">
@@ -61,40 +56,40 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark">
                                 <li>
-                                    <NavLink class="dropdown-item" href="/offers/myoffers">
+                                    <a class="dropdown-item" href="/offers/myoffers">
                                         📤 My Offers
-                                    </NavLink>
+                                    </a>
                                 </li>
                                 <li>
-                                    <NavLink class="dropdown-item" href="/offers/manageoffers">
+                                    <a class="dropdown-item" href="/offers/manageoffers">
                                         📥 Manage Offers
-                                    </NavLink>
+                                    </a>
                                 </li>
                             </ul>
                         </li>
 
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/transactions">
+                            <a class="nav-link px-2" href="/transactions">
                                 💳 Transactions
-                            </NavLink>
+                            </a>
                         </li>
 
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/reviews">
+                            <a class="nav-link px-2" href="/reviews">
                                 ⭐ Reviews
-                            </NavLink>
+                            </a>
                         </li>
 
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/wantedads">
+                            <a class="nav-link px-2" href="/wantedads">
                                 📢 Wanted Ads
-                            </NavLink>
+                            </a>
                         </li>
 
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/dashboard">
+                            <a class="nav-link px-2" href="/dashboard">
                                 📊 Dashboard
-                            </NavLink>
+                            </a>
                         </li>
 
                     </Authorized>
@@ -106,9 +101,9 @@
                 <AuthorizeView>
                     <Authorized>
                         <li class="nav-item">
-                            <NavLink class="nav-link px-2" href="/account/profile">
+                            <a class="nav-link px-2" href="/account/profile">
                                 👤 @context.User.Identity?.Name?.Split('@')[0]
-                            </NavLink>
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-outline-light btn-sm px-3" href="/account/logout">
@@ -135,7 +130,7 @@
     </div>
 </nav>
 
-<main id="main-content" role="main" tabindex="-1">
+<main id="main-content" role="main">
     @Body
 </main>
 
