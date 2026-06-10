@@ -5,7 +5,7 @@ namespace SomaShare.Migrations
 
     /// <inheritdoc />
 
-    public partial class AddFavourites : Migration
+    public partial class AddFavouritesV2 : Migration
 
     {
 

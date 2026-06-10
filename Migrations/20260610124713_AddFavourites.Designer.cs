@@ -13,7 +13,7 @@ namespace SomaShare.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260610124713_AddFavourites")]
-    partial class AddFavourites
+    partial class AddFavouritesV2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
