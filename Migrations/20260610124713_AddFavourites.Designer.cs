@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SomaShare.Data;
 
@@ -11,9 +12,11 @@ using SomaShare.Data;
 namespace SomaShare.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260610124713_AddFavourites")]
+    partial class AddFavouritesV2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,7 +174,6 @@ namespace SomaShare.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("MaxPrice")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("PostedById")
@@ -289,8 +291,7 @@ namespace SomaShare.Migrations
 
                     b.HasIndex("TextbookId");
 
-                    b.HasIndex("UserId", "TextbookId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Favourites");
                 });
@@ -311,7 +312,6 @@ namespace SomaShare.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("OfferAmount")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Status")
@@ -395,7 +395,6 @@ namespace SomaShare.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("SellerId")
@@ -457,7 +456,6 @@ namespace SomaShare.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("MaxPrice")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Title")
@@ -542,7 +540,7 @@ namespace SomaShare.Migrations
                     b.HasOne("SomaShare.Models.Textbook", "Textbook")
                         .WithMany()
                         .HasForeignKey("TextbookId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("SomaShare.Models.ApplicationUser", "User")

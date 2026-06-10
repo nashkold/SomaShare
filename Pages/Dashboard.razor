@@ -1,4 +1,4 @@
-﻿@* 
+﻿@*
     DASHBOARD PAGE
     ══════════════
     Route:   /dashboard
@@ -14,7 +14,9 @@
 @using Microsoft.EntityFrameworkCore
 @using SomaShare.Data
 @using SomaShare.Models
+@using SomaShare.Services
 @inject ApplicationDbContext Db
+@inject IReviewService ReviewService
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
@@ -28,9 +30,9 @@
             <h2 class="mb-0">👋 Welcome back, @currentUser?.FullName</h2>
             <p class="text-muted mb-0 small">@currentUser?.Email · @currentUser?.Campus</p>
         </div>
-        @* Trust Score — Africanisation requirement (section 6) *@
+        @* Trust Score badge — shows the live calculated score, not the stale DB column *@
         <div class="badge bg-warning text-dark fs-6 px-3 py-2">
-            ⭐ Trust Score: @currentUser?.TrustScore
+            ⭐ Trust Score: @trustScore.ToString("0.0")
         </div>
     </div>
 
@@ -45,8 +47,10 @@
     else
     {
         @* ── Summary Cards ─────────────────────────────────────────── *@
-        @* Four quick-glance counters at the top of the dashboard *@
+        @* Seven quick-glance counters at the top of the dashboard     *@
         <div class="row g-3 mb-4">
+
+            @* — existing four cards — *@
             <div class="col-6 col-md-3">
                 <div class="card text-center border-primary h-100">
                     <div class="card-body py-3">
@@ -56,6 +60,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-6 col-md-3">
                 <div class="card text-center border-success h-100">
                     <div class="card-body py-3">
@@ -65,6 +70,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-6 col-md-3">
                 <div class="card text-center border-info h-100">
                     <div class="card-body py-3">
@@ -74,6 +80,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-6 col-md-3">
                 <div class="card text-center border-warning h-100">
                     <div class="card-body py-3">
@@ -83,6 +90,50 @@
                     </div>
                 </div>
             </div>
+
+            @* — three NEW cards — *@
+
+            @* Pending Offers: how many of my submitted offers are still awaiting a seller response *@
+            <div class="col-6 col-md-4">
+                <div class="card text-center border-orange h-100" style="border-color:#fd7e14!important">
+                    <div class="card-body py-3">
+                        <div class="fs-2">⏳</div>
+                        <div class="fs-3 fw-bold" style="color:#fd7e14">@pendingOffers</div>
+                        <div class="text-muted small">Pending Offers</div>
+                    </div>
+                </div>
+            </div>
+
+            @* Completed Transactions: how many of my purchases have been fully finalised *@
+            <div class="col-6 col-md-4">
+                <div class="card text-center h-100" style="border-color:#198754!important;border-width:2px;border-style:solid;">
+                    <div class="card-body py-3">
+                        <div class="fs-2">✅</div>
+                        <div class="fs-3 fw-bold text-success">@completedTransactions</div>
+                        <div class="text-muted small">Completed Transactions</div>
+                    </div>
+                </div>
+            </div>
+
+            @* Trust Score: calculated by ReviewService — weighted average of star ratings + volume bonus *@
+            <div class="col-12 col-md-4">
+                <div class="card text-center border-warning h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2">🏅</div>
+                        <div class="fs-3 fw-bold text-warning">@trustScore.ToString("0.0")<small class="fs-6 text-muted">/100</small></div>
+                        <div class="text-muted small">Trust Score</div>
+
+                        @* Thin progress bar so the score is also visual *@
+                        <div class="progress mt-2" style="height:6px;" role="progressbar"
+                             aria-valuenow="@((int)trustScore)" aria-valuemin="0" aria-valuemax="100"
+                             aria-label="Trust score @trustScore.ToString("0.0") out of 100">
+                            <div class="progress-bar bg-warning"
+                                 style="width:@trustScore%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         @* ════════════════════════════════════════════════════════════
@@ -337,6 +388,14 @@
     private List<Review> myReviews = new();
     private bool isLoading = true;
 
+    // ── New fields ────────────────────────────────────────────────────
+    // trustScore    – weighted rating out of 100, calculated by ReviewService
+    // pendingOffers – how many of my offers are still awaiting a seller response
+    // completedTransactions – how many of my purchases have been fully finalised
+    private double trustScore = 0;
+    private int pendingOffers = 0;
+    private int completedTransactions = 0;
+
     // ── OnInitializedAsync ────────────────────────────────────────────
     // Blazor calls this automatically when the page loads.
     // It's async because database calls take time — we don't want
@@ -361,13 +420,14 @@
     }
 
     // ── LoadDashboardData ─────────────────────────────────────────────
-    // Runs 4 separate database queries — one per dashboard section.
+    // Runs database queries for each dashboard section, then derives
+    // the three new computed values from the loaded lists.
     //
-    // .Include()        = SQL JOIN (load a related table)
-    // .ThenInclude()    = JOIN a second level deep
-    // .Where()          = SQL WHERE (filter by current user)
+    // .Include()           = SQL JOIN (load a related table)
+    // .ThenInclude()       = JOIN a second level deep
+    // .Where()             = SQL WHERE (filter by current user)
     // .OrderByDescending() = SQL ORDER BY … DESC
-    // .ToListAsync()    = execute the query and return a List<T>
+    // .ToListAsync()       = execute the query and return a List<T>
     //
     private async Task LoadDashboardData(string userId)
     {
@@ -402,5 +462,19 @@
             .Where(r => r.RevieweeId == userId)
             .OrderByDescending(r => r.DatePosted)
             .ToListAsync();
+
+        // ── Derived / computed values ─────────────────────────────────
+
+        // Trust score — delegated to ReviewService so the formula lives
+        // in one place and can be reused by other pages (e.g. Profile).
+        trustScore = await ReviewService.CalculateTrustScoreAsync(userId);
+
+        // Count how many of my submitted offers are still waiting on a seller.
+        // Derived from the already-loaded myOffers list — no extra DB hit needed.
+        pendingOffers = myOffers.Count(o => o.Status == "Pending");
+
+        // Count how many of my purchases have been fully finalised.
+        // Derived from the already-loaded myTransactions list.
+        completedTransactions = myTransactions.Count(t => t.IsComplete);
     }
 }

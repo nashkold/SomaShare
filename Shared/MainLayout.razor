@@ -1,0 +1,145 @@
+﻿@*
+    MAIN LAYOUT
+    ═══════════
+    Place this file at: Shared/MainLayout.razor
+    Referenced by:      App.razor DefaultLayout="@typeof(MainLayout)"
+*@
+
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top"
+     role="navigation" aria-label="Main navigation">
+    <div class="container-fluid">
+
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+            <span aria-hidden="true">📚</span> SomaShare
+        </a>
+
+        <button class="navbar-toggler border-0" type="button"
+                data-bs-toggle="collapse" data-bs-target="#mainNav"
+                aria-controls="mainNav" aria-expanded="false"
+                aria-label="Toggle navigation menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                <li class="nav-item">
+                    <a class="nav-link px-2" href="/" aria-label="Home">
+                        🏠 Home
+                    </a>
+                </li>
+
+                <AuthorizeView>
+                    <Authorized>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/textbooks">
+                                📖 Browse
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/wishlist">
+                                ❤️ Wishlist
+                            </a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle px-2" href="#"
+                               role="button" data-bs-toggle="dropdown"
+                               aria-expanded="false" aria-haspopup="true">
+                                🤝 Offers
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li>
+                                    <a class="dropdown-item" href="/offers/myoffers">
+                                        📤 My Offers
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/offers/manageoffers">
+                                        📥 Manage Offers
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/transactions">
+                                💳 Transactions
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/reviews">
+                                ⭐ Reviews
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/wantedads">
+                                📢 Wanted Ads
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/dashboard">
+                                📊 Dashboard
+                            </a>
+                        </li>
+
+                    </Authorized>
+                </AuthorizeView>
+
+            </ul>
+
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-2">
+                <AuthorizeView>
+                    <Authorized>
+                        <li class="nav-item">
+                            <a class="nav-link px-2" href="/account/profile">
+                                👤 @context.User.Identity?.Name?.Split('@')[0]
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm px-3" href="/account/logout">
+                                Logout
+                            </a>
+                        </li>
+                    </Authorized>
+                    <NotAuthorized>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm px-3" href="/account/login">
+                                Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-warning btn-sm px-3 fw-semibold" href="/account/register">
+                                Register
+                            </a>
+                        </li>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </ul>
+
+        </div>
+    </div>
+</nav>
+
+<main id="main-content" role="main">
+    @Body
+</main>
+
+<footer class="border-top mt-5 py-4 bg-light" role="contentinfo">
+    <div class="container text-center text-muted small">
+        <p class="mb-1">
+            <span aria-hidden="true">📚</span>
+            <strong>SomaShare</strong> — University Textbook Exchange
+        </p>
+        <p class="mb-0">&copy; @DateTime.Now.Year SomaShare</p>
+    </div>
+</footer>
