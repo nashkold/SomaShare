@@ -1,0 +1,219 @@
+﻿@page "/reviews"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using SomaShare.Data
+@using SomaShare.Models
+@inject ApplicationDbContext Db
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<div class="container mt-4 pb-5">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-0">⭐ Reviews</h1>
+        <p class="text-muted small mb-0">Your reputation on SomaShare</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5" role="status" aria-live="polite">
+            <div class="spinner-border text-warning" aria-hidden="true"></div>
+            <p class="mt-2 text-muted">Loading reviews…</p>
+        </div>
+    }
+    else
+    {
+        @* ── Average score card ── *@
+        @if (reviewsReceived.Any())
+        {
+            var avg = reviewsReceived.Average(r => r.Rating);
+            <div class="card border-warning shadow-sm mb-4" style="max-width:360px;">
+                <div class="card-body text-center py-4">
+                    <div class="display-4 fw-bold text-warning mb-1">
+                        @avg.ToString("0.0")
+                        <small class="fs-5 text-muted">/5</small>
+                    </div>
+                    <div class="mb-2" aria-label="@avg.ToString("0.0") out of 5 stars">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <span class="fs-4 @(i <= Math.Round(avg) ? "text-warning" : "text-muted")"
+                                  aria-hidden="true">★</span>
+                        }
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Based on @reviewsReceived.Count review@(reviewsReceived.Count == 1 ? "" : "s")
+                    </p>
+                </div>
+            </div>
+        }
+
+        @* ── Tabs ── *@
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(activeTab == "received" ? "active" : "")"
+                        @onclick='() => activeTab = "received"'
+                        role="tab"
+                        aria-selected="@(activeTab == "received")"
+                        aria-controls="received-panel">
+                    Reviews About Me
+                    @if (reviewsReceived.Any())
+                    {
+                        <span class="badge bg-warning text-dark ms-1">@reviewsReceived.Count</span>
+                    }
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(activeTab == "given" ? "active" : "")"
+                        @onclick='() => activeTab = "given"'
+                        role="tab"
+                        aria-selected="@(activeTab == "given")"
+                        aria-controls="given-panel">
+                    Reviews I've Given
+                    @if (reviewsGiven.Any())
+                    {
+                        <span class="badge bg-secondary ms-1">@reviewsGiven.Count</span>
+                    }
+                </button>
+            </li>
+        </ul>
+
+        @* ── Reviews Received ── *@
+        @if (activeTab == "received")
+        {
+            <div id="received-panel" role="tabpanel">
+                @if (!reviewsReceived.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div class="display-1 mb-3" aria-hidden="true">⭐</div>
+                        <h5>No reviews yet</h5>
+                        <p>Complete a transaction as a seller to receive your first review.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var review in reviewsReceived)
+                        {
+                            <div class="col-md-6">
+                                <article class="card h-100 shadow-sm"
+                                         aria-label="Review from @(review.Reviewer?.FullName ?? "Anonymous")">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <strong>@(review.Reviewer?.FullName ?? "Anonymous")</strong>
+                                            <span aria-label="@review.Rating out of 5 stars">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <span class="@(i <= review.Rating ? "text-warning" : "text-muted")"
+                                                          aria-hidden="true">★</span>
+                                                }
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                        {
+                                            <p class="text-muted mb-2">@review.Comment</p>
+                                        }
+                                        <time class="small text-muted"
+                                              datetime="@review.DatePosted.ToString("yyyy-MM-dd")">
+                                            @review.DatePosted.ToString("dd MMM yyyy")
+                                        </time>
+                                    </div>
+                                </article>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        @* ── Reviews Given ── *@
+        @if (activeTab == "given")
+        {
+            <div id="given-panel" role="tabpanel">
+                @if (!reviewsGiven.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div class="display-1 mb-3" aria-hidden="true">✍️</div>
+                        <h5>No reviews given yet</h5>
+                        <p>
+                            After completing a transaction you can
+                            <a href="/transactions">leave a review for the seller</a>.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var review in reviewsGiven)
+                        {
+                            <div class="col-md-6">
+                                <article class="card h-100 shadow-sm border-secondary"
+                                         aria-label="Your review for @(review.Reviewee?.FullName ?? "Unknown")">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <small class="text-muted d-block">Your review for</small>
+                                                <strong>@(review.Reviewee?.FullName ?? "Unknown")</strong>
+                                            </div>
+                                            <span aria-label="@review.Rating out of 5 stars">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <span class="@(i <= review.Rating ? "text-warning" : "text-muted")"
+                                                          aria-hidden="true">★</span>
+                                                }
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                        {
+                                            <p class="text-muted mb-2">@review.Comment</p>
+                                        }
+                                        <time class="small text-muted"
+                                              datetime="@review.DatePosted.ToString("yyyy-MM-dd")">
+                                            @review.DatePosted.ToString("dd MMM yyyy")
+                                        </time>
+                                    </div>
+                                </article>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+
+</div>
+
+@code {
+    private List<Review> reviewsReceived = new();
+    private List<Review> reviewsGiven = new();
+    private string activeTab = "received";
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user == null)
+        {
+            NavigationManager.NavigateTo("/account/login", forceLoad: true);
+            return;
+        }
+
+        reviewsReceived = await Db.Reviews
+            .Include(r => r.Reviewer)
+            .Where(r => r.RevieweeId == user.Id)
+            .OrderByDescending(r => r.DatePosted)
+            .ToListAsync();
+
+        reviewsGiven = await Db.Reviews
+            .Include(r => r.Reviewee)
+            .Where(r => r.ReviewerId == user.Id)
+            .OrderByDescending(r => r.DatePosted)
+            .ToListAsync();
+
+        isLoading = false;
+    }
+}

@@ -1,0 +1,201 @@
+﻿@page "/transactions"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using SomaShare.Data
+@using SomaShare.Models
+@inject ApplicationDbContext Db
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<div class="container mt-4 pb-5">
+
+    <div class="mb-4">
+        <h1 class="h3 mb-0">💳 My Transactions</h1>
+        <p class="text-muted small mb-0">Purchases you've made as a buyer</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert @statusClass alert-dismissible d-flex gap-2 mb-4"
+             role="alert" aria-live="polite">
+            <span>@statusMessage</span>
+            <button type="button" class="btn-close ms-auto"
+                    @onclick="() => statusMessage = string.Empty"
+                    aria-label="Dismiss"></button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5" role="status" aria-live="polite">
+            <div class="spinner-border text-info" aria-hidden="true"></div>
+            <p class="mt-2 text-muted">Loading transactions…</p>
+        </div>
+    }
+    else if (!transactions.Any())
+    {
+        <div class="text-center py-5">
+            <div class="display-1 mb-3" aria-hidden="true">💳</div>
+            <h4 class="text-muted">No transactions yet</h4>
+            <p class="text-muted mb-4">Transactions appear here once a seller accepts your offer.</p>
+            <a href="/offers/myoffers" class="btn btn-primary">View My Offers</a>
+        </div>
+    }
+    else
+    {
+        @* Summary *@
+        <div class="d-flex gap-2 flex-wrap mb-4">
+            <span class="badge bg-success fs-6 px-3 py-2">
+                ✅ @transactions.Count(t => t.IsComplete) Completed
+            </span>
+            <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                ⏳ @transactions.Count(t => !t.IsComplete) Pending
+            </span>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0"
+                           aria-label="My transactions">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Textbook</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col">Amount Paid</th>
+                                <th scope="col">Payment Method</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tx in transactions)
+                            {
+                                var sellerId = tx.Offer?.Textbook?.SellerId ?? string.Empty;
+                                bool reviewed = reviewedSellerIds.Contains(sellerId);
+
+                                <tr>
+                                    <td class="fw-semibold">
+                                        @(tx.Offer?.Textbook?.Title ?? "—")
+                                    </td>
+                                    <td class="small">
+                                        @(tx.Offer?.Textbook?.Seller?.FullName ?? "—")
+                                    </td>
+                                    <td class="fw-bold text-success">
+                                        R @(tx.Offer?.OfferAmount.ToString("0.00") ?? "—")
+                                    </td>
+                                    <td class="small text-muted">@tx.PaymentMethod</td>
+                                    <td class="small text-muted">
+                                        @tx.TransactionDate.ToString("dd MMM yyyy")
+                                    </td>
+                                    <td>
+                                        @if (tx.IsComplete)
+                                        {
+                                            <span class="badge bg-success">Complete</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1 flex-wrap">
+                                            @if (!tx.IsComplete)
+                                            {
+                                                <button class="btn btn-success btn-sm"
+                                                        @onclick="() => MarkComplete(tx.TransactionId)"
+                                                        aria-label="Mark transaction as complete">
+                                                    ✓ Mark Complete
+                                                </button>
+                                            }
+                                            else if (!reviewed && !string.IsNullOrEmpty(sellerId))
+                                            {
+                                                <a href="/reviews/add/@tx.TransactionId"
+                                                   class="btn btn-warning btn-sm"
+                                                   aria-label="Leave a review for this transaction">
+                                                    ⭐ Review Seller
+                                                </a>
+                                            }
+                                            else if (reviewed)
+                                            {
+                                                <span class="text-muted small">✓ Reviewed</span>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+@code {
+    private List<Transaction> transactions = new();
+    private HashSet<string> reviewedSellerIds = new();
+    private string currentUserId = string.Empty;
+    private bool isLoading = true;
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-success";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user == null)
+        {
+            NavigationManager.NavigateTo("/account/login", forceLoad: true);
+            return;
+        }
+
+        currentUserId = user.Id;
+        await LoadData();
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        transactions = await Db.Transactions
+            .Include(t => t.Offer)
+                .ThenInclude(o => o.Textbook)
+                    .ThenInclude(tb => tb != null ? tb.Seller : null)
+            .Where(t => t.Offer != null && t.Offer.BuyerId == currentUserId)
+            .OrderByDescending(t => t.TransactionDate)
+            .ToListAsync();
+
+        reviewedSellerIds = (await Db.Reviews
+            .Where(r => r.ReviewerId == currentUserId)
+            .Select(r => r.RevieweeId)
+            .ToListAsync())
+            .ToHashSet();
+    }
+
+    private async Task MarkComplete(int transactionId)
+    {
+        try
+        {
+            var tx = await Db.Transactions.FindAsync(transactionId);
+            if (tx != null)
+            {
+                tx.IsComplete = true;
+                await Db.SaveChangesAsync();
+                statusMessage = "Transaction marked as complete! You can now leave a review.";
+                statusClass = "alert-success";
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error: {ex.Message}";
+            statusClass = "alert-danger";
+        }
+    }
+}
