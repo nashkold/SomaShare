@@ -4,6 +4,7 @@
 @using Microsoft.EntityFrameworkCore
 @using SomaShare.Data
 @using SomaShare.Models
+@using SomaShare.Services
 @inject ApplicationDbContext Db
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthStateProvider
@@ -184,19 +185,26 @@
                             <p class="small text-muted mt-1">Seller: @(book.Seller?.FullName ?? "Unknown")</p>
 
                             @* Show Edit/Delete only to the owner *@
+                            @if (book.SellerId != currentUserId)
+                            {
+                                 <div class="mt-1">
+                                     <FavouriteButton TextbookId="@book.TextbookId" UserId="@currentUserId" />
+                                 </div>
+                            }
+
                             @if (book.SellerId == currentUserId)
                             {
                                 <div class="d-flex gap-2 mt-2">
                                     <button class="btn btn-outline-primary btn-sm w-50"
-                                            @onclick="() => StartEdit(book)">Edit</button>
+                                        @onclick="() => StartEdit(book)">Edit</button>
                                     <button class="btn btn-outline-danger btn-sm w-50"
-                                            @onclick="() => AskDelete(book)">Delete</button>
+                                        @onclick="() => AskDelete(book)">Delete</button>
                                 </div>
                             }
                             else if (book.IsAvailable)
                             {
                                 <a href="/offers/make/@book.TextbookId"
-                                   class="btn btn-success btn-sm mt-2 w-100">Make an Offer</a>
+                                    class="btn btn-success btn-sm mt-2 w-100">Make an Offer</a>
                             }
                             else
                             {
