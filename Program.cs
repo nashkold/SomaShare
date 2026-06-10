@@ -35,6 +35,7 @@ builder.Services.AddScoped<ITextbookService, TextbookService>();
 builder.Services.AddScoped<IOfferService, OfferService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IWantedAdService, WantedAdService>();
 var app = builder.Build();
 
 // Seed default roles and admin user on startup
