@@ -1,0 +1,86 @@
+﻿@*
+    FAVOURITE BUTTON COMPONENT
+    ══════════════════════════
+    A self-contained ❤️ / 🤍 toggle that can be dropped onto any page
+    that shows textbook cards, e.g. Textbooklistings.razor.
+
+    Usage:
+        <FavouriteButton TextbookId="@book.TextbookId"
+                         UserId="@currentUserId" />
+
+    The component manages its own saved/unsaved state internally so
+    the parent page does not need any extra fields or logic.
+*@
+
+@using SomaShare.Services
+@inject IFavouriteService FavouriteService
+
+<button class="btn btn-sm @(isSaved ? "btn-danger" : "btn-outline-secondary") favourite-btn"
+        @onclick="Toggle"
+        disabled="@isBusy"
+        aria-pressed="@isSaved.ToString().ToLower()"
+        aria-label="@(isSaved ? "Remove from wishlist" : "Save to wishlist")"
+        title="@(isSaved ? "Remove from wishlist" : "Save to wishlist")">
+
+    @if (isBusy)
+    {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+    }
+    else if (isSaved)
+    {
+        <span aria-hidden="true">❤️</span>
+    }
+    else
+    {
+        <span aria-hidden="true">🤍</span>
+    }
+</button>
+
+@code {
+
+    // ── Parameters ────────────────────────────────────────────────
+    [Parameter, EditorRequired] public int TextbookId { get; set; }
+    [Parameter, EditorRequired] public string UserId { get; set; } = string.Empty;
+
+    // Called by the parent if it wants to react to changes
+    // (e.g. refresh a counter). Optional — leave empty if not needed.
+    [Parameter] public EventCallback<bool> OnToggled { get; set; }
+
+    // ── State ─────────────────────────────────────────────────────
+    private bool isSaved = false;
+    private bool isBusy = false;
+
+    // ── Lifecycle ─────────────────────────────────────────────────
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrEmpty(UserId)) return;
+
+        // Check whether this book is already in the user's favourites
+        var userFavourites = await FavouriteService.GetUserFavouritesAsync(UserId);
+        isSaved = userFavourites.Any(f => f.TextbookId == TextbookId);
+    }
+
+    // ── Toggle ────────────────────────────────────────────────────
+    private async Task Toggle()
+    {
+        if (string.IsNullOrEmpty(UserId) || isBusy) return;
+
+        isBusy = true;
+        try
+        {
+            if (isSaved)
+                await FavouriteService.RemoveFavouriteAsync(UserId, TextbookId);
+            else
+                await FavouriteService.AddFavouriteAsync(UserId, TextbookId);
+
+            isSaved = !isSaved;
+
+            if (OnToggled.HasDelegate)
+                await OnToggled.InvokeAsync(isSaved);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
