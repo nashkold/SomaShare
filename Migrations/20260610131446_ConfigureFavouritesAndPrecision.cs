@@ -13,11 +13,11 @@ namespace SomaShare.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Favourites_Textbooks_TextbookId",
                 table: "Favourites");
-            //
+            
             //migrationBuilder.DropIndex(
             //    name: "IX_Favourites_UserId",
             //    table: "Favourites");
-            //
+            
             migrationBuilder.CreateIndex(
                 name: "IX_Favourites_UserId_TextbookId",
                 table: "Favourites",
@@ -39,11 +39,11 @@ namespace SomaShare.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Favourites_Textbooks_TextbookId",
                 table: "Favourites");
-            //
-            //migrationBuilder.DropIndex(
+            
+            // migrationBuilder.DropIndex(
             //    name: "IX_Favourites_UserId_TextbookId",
             //    table: "Favourites");
-            //
+
             migrationBuilder.CreateIndex(
                 name: "IX_Favourites_UserId",
                 table: "Favourites",

@@ -41,7 +41,7 @@ namespace SomaShare.Data
                 await userManager.CreateAsync(admin, "Admin@1234");
                 await userManager.AddToRoleAsync(admin, "Admin");
             }
-            //Create Sample Users
+            // Create Sample Users
             var buyerEmail = "buyer@somashare.ac.za";
             if (await userManager.FindByEmailAsync("buyer@somashare.ac.za") == null)
             {
@@ -74,7 +74,7 @@ namespace SomaShare.Data
                 await userManager.AddToRoleAsync(seller, "Seller");
             }
 
-            //Create Sample Data
+            // Create Sample Textbooks
             if (!context.Textbooks.Any())
             {
                 var seller = await userManager.FindByEmailAsync("seller@somashare.ac.za");

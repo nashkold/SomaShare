@@ -58,7 +58,6 @@ else
 
         <div class="d-flex gap-2 mt-3">
 
-            @* Only the seller can complete the transaction *@
             @if (!transaction.IsComplete &&
                  transaction.Offer?.Textbook?.SellerId == currentUserId)
             {

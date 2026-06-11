@@ -57,7 +57,6 @@ else
                             View
                         </a>
 
-                        @* Only the seller can mark a transaction as complete *@
                         @if (!transaction.IsComplete &&
                              transaction.Offer?.Textbook?.SellerId == currentUserId)
                         {

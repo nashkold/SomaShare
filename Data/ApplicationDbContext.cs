@@ -21,9 +21,7 @@ namespace SomaShare.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // ── Decimal precision ─────────────────────────────────────────────
-            // SQL Server's default decimal(18,2) truncates silently without this.
-            // 18 digits total, 2 after the decimal point — sufficient for ZAR prices.
+            // Decimal precision
             modelBuilder.Entity<Offer>()
                 .Property(o => o.OfferAmount)
                 .HasPrecision(18, 2);
@@ -40,7 +38,7 @@ namespace SomaShare.Data
                 .Property(w => w.MaxPrice)
                 .HasPrecision(18, 2);
 
-            // ── Reviews ───────────────────────────────────────────────────────
+            // Reviews
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Reviewer)
                 .WithMany(u => u.ReviewsGiven)
@@ -53,7 +51,7 @@ namespace SomaShare.Data
                 .HasForeignKey(r => r.RevieweeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ── Offers ────────────────────────────────────────────────────────
+            // Offers
             modelBuilder.Entity<Offer>()
                 .HasOne(o => o.Textbook)
                 .WithMany(t => t.Offers)
@@ -66,10 +64,7 @@ namespace SomaShare.Data
                 .HasForeignKey(o => o.BuyerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ── Favourites ────────────────────────────────────────────────────
-            // Restrict (not Cascade) on the Textbook FK to avoid the
-            // "multiple cascade paths" error SQL Server raises when a single
-            // Textbook delete could cascade through both Offers and Favourites.
+            // Favourites 
             modelBuilder.Entity<Favourite>()
                 .HasOne(f => f.Textbook)
                 .WithMany()

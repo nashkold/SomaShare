@@ -9,14 +9,10 @@ namespace SomaShare.Models
         public int Id { get; set; }
         [Required]
         public string Title { get; set; }
-
         public string Description { get; set; }
-
         public decimal MaxPrice { get; set; }
-
         public DateTime DatePosted { get; set; } = DateTime.Now;
-
-        // Foreign Key — who posted this wanted ad
+        // Foreign Key — who posted the wanted ad
         public string UserId { get; set; }
         public ApplicationUser User { get; set; }
     }

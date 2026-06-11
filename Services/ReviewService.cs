@@ -16,7 +16,7 @@ namespace SomaShare.Services
 
         public async Task AddReviewAsync(Review review)
         {
-            // Ensure transaction completed before review
+            // Ensures the transaction is completed before a review can be submitted
             bool valid = await _context.Transactions
                 .Include(t => t.Offer)
                 .AnyAsync(t =>

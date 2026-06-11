@@ -22,7 +22,7 @@ namespace SomaShare.Services
             await _context.SaveChangesAsync();
         }
 
-        // Accept an offer — also creates a transaction automatically
+        // Accept an offer, also creates a transaction automatically
         public async Task AcceptOfferAsync(int offerId)
         {
             var offer = await _context.Offers
@@ -31,7 +31,7 @@ namespace SomaShare.Services
 
             if (offer == null) return;
 
-            // Business Rule: only one offer can be accepted per textbook
+            // Only one offer can be accepted per textbook
             var alreadyAccepted = await _context.Offers
                 .AnyAsync(o => o.TextbookId == offer.TextbookId && o.Status == "Accepted");
 
@@ -68,7 +68,7 @@ namespace SomaShare.Services
             }
         }
 
-        // Get all offers made by a specific buyer (Sorted by newest)
+        // Get all offers made by a specific buyer
         public async Task<List<Offer>> GetOffersByBuyerAsync(string buyerId)
         {
             return await _context.Offers
@@ -78,7 +78,7 @@ namespace SomaShare.Services
                 .ToListAsync();
         }
 
-        // Get all offers on the seller's textbooks (Sorted by newest)
+        // Get all offers on the seller's textbooks
         public async Task<List<Offer>> GetOffersForSellerAsync(string sellerId)
         {
             return await _context.Offers

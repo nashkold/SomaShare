@@ -1,18 +1,4 @@
-﻿@*
-    FAVOURITE BUTTON COMPONENT
-    ══════════════════════════
-    A self-contained ❤️ / 🤍 toggle that can be dropped onto any page
-    that shows textbook cards, e.g. Textbooklistings.razor.
-
-    Usage:
-        <FavouriteButton TextbookId="@book.TextbookId"
-                         UserId="@currentUserId" />
-
-    The component manages its own saved/unsaved state internally so
-    the parent page does not need any extra fields or logic.
-*@
-
-@using SomaShare.Services
+﻿@using SomaShare.Services
 @inject IFavouriteService FavouriteService
 
 <button class="btn btn-sm @(isSaved ? "btn-danger" : "btn-outline-secondary") favourite-btn"
@@ -38,19 +24,16 @@
 
 @code {
 
-    // ── Parameters ────────────────────────────────────────────────
+    // Parameters
     [Parameter, EditorRequired] public int TextbookId { get; set; }
     [Parameter, EditorRequired] public string UserId { get; set; } = string.Empty;
-
-    // Called by the parent if it wants to react to changes
-    // (e.g. refresh a counter). Optional — leave empty if not needed.
     [Parameter] public EventCallback<bool> OnToggled { get; set; }
 
-    // ── State ─────────────────────────────────────────────────────
+    // State 
     private bool isSaved = false;
     private bool isBusy = false;
 
-    // ── Lifecycle ─────────────────────────────────────────────────
+    // Lifecycle 
     protected override async Task OnParametersSetAsync()
     {
         if (string.IsNullOrEmpty(UserId)) return;
@@ -60,7 +43,7 @@
         isSaved = userFavourites.Any(f => f.TextbookId == TextbookId);
     }
 
-    // ── Toggle ────────────────────────────────────────────────────
+    // Toggle 
     private async Task Toggle()
     {
         if (string.IsNullOrEmpty(UserId) || isBusy) return;

@@ -27,7 +27,6 @@
     </div>
 }
 
-@* ── Create / Edit Form ── *@
 <div class="card p-4 mb-4 border-primary">
 
     <h5>@(editingId == 0 ? "Post a Wanted Ad" : "Edit Wanted Ad")</h5>
@@ -61,7 +60,6 @@
 
 </div>
 
-@* ── My Ads ── *@
 <h5 class="mt-4">My Wanted Ads</h5>
 
 @if (!myAds.Any())
@@ -106,7 +104,6 @@ else
     </table>
 }
 
-@* ── Browse All Ads ── *@
 <h5 class="mt-2">All Wanted Ads</h5>
 
 @if (isLoading)

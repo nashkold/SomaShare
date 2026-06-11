@@ -1,13 +1,4 @@
-﻿@*
-    WISHLIST PAGE
-    ═════════════
-    Route:   /wishlist
-    Access:  Logged-in users only
-    Purpose: Displays all textbooks the user has saved as favourites.
-             Uses FavouriteService for all add / remove operations.
-*@
-
-@page "/wishlist"
+﻿@page "/wishlist"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using SomaShare.Models
@@ -20,7 +11,6 @@
 
 <div class="container mt-4 pb-5">
 
-    @* ── Page Header ──────────────────────────────────────────────── *@
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h1 class="h3 mb-0">❤️ My Wishlist</h1>
@@ -31,7 +21,6 @@
         </a>
     </div>
 
-    @* ── Status alerts ────────────────────────────────────────────── *@
     @if (!string.IsNullOrEmpty(statusMessage))
     {
         <div class="alert @statusClass alert-dismissible d-flex align-items-center gap-2 mb-4"
@@ -43,7 +32,6 @@
         </div>
     }
 
-    @* ── Loading ──────────────────────────────────────────────────── *@
     @if (isLoading)
     {
         <div class="text-center py-5" role="status" aria-live="polite">
@@ -52,7 +40,6 @@
         </div>
     }
 
-    @* ── Empty state ──────────────────────────────────────────────── *@
     else if (!favourites.Any())
     {
         <div class="text-center py-5">
@@ -65,7 +52,6 @@
         </div>
     }
 
-    @* ── Wishlist grid ────────────────────────────────────────────── *@
     else
     {
         <div class="row g-4" role="list" aria-label="Saved textbooks">
@@ -78,7 +64,6 @@
                     <article class="card h-100 shadow-sm wishlist-card"
                              aria-label="@book.Title by @book.Author">
 
-                        @* Book cover / placeholder *@
                         @if (!string.IsNullOrEmpty(book.ImageUrl))
                         {
                             <img src="@book.ImageUrl"
@@ -97,13 +82,11 @@
 
                         <div class="card-body d-flex flex-column">
 
-                            @* Title + author *@
                             <h5 class="card-title fw-bold mb-1">@book.Title</h5>
                             <p class="text-muted small mb-2">
                                 by <em>@(book.Author ?? "Unknown author")</em>
                             </p>
 
-                            @* Badges *@
                             <div class="mb-3 d-flex flex-wrap gap-1">
                                 @if (!string.IsNullOrEmpty(book.Condition))
                                 {
@@ -123,7 +106,6 @@
                                 }
                             </div>
 
-                            @* Price + seller *@
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between align-items-baseline mb-3">
                                     <span class="fs-5 fw-bold text-success">
@@ -134,7 +116,6 @@
                                     </span>
                                 </div>
 
-                                @* Action buttons *@
                                 <div class="d-flex gap-2">
                                     @if (book.IsAvailable)
                                     {
@@ -175,7 +156,6 @@
             }
         </div>
 
-        @* ── Bulk clear ───────────────────────────────────────────── *@
         @if (favourites.Count > 1)
         {
             <div class="text-end mt-4">
@@ -208,7 +188,6 @@
 
 @code {
 
-    // ── State ─────────────────────────────────────────────────────
     private List<Favourite> favourites = new();
     private HashSet<int> removingIds = new();   // tracks in-progress removals per card
     private string currentUserId = string.Empty;
@@ -217,7 +196,6 @@
     private string statusMessage = string.Empty;
     private string statusClass = "alert-success";
 
-    // ── Lifecycle ─────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -234,13 +212,11 @@
         isLoading = false;
     }
 
-    // ── Load ──────────────────────────────────────────────────────
     private async Task LoadFavourites()
     {
         favourites = await FavouriteService.GetUserFavouritesAsync(currentUserId);
     }
 
-    // ── Remove one ────────────────────────────────────────────────
     private async Task RemoveFavourite(int favouriteId, int textbookId, string title)
     {
         removingIds.Add(favouriteId);
@@ -261,7 +237,6 @@
         }
     }
 
-    // ── Clear all ─────────────────────────────────────────────────
     private async Task ClearAll()
     {
         try
@@ -284,7 +259,6 @@
         }
     }
 
-    // ── Helper ────────────────────────────────────────────────────
     private void ShowStatus(string message, string cssClass = "alert-success")
     {
         statusMessage = message;

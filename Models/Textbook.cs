@@ -6,7 +6,6 @@ namespace SomaShare.Models
     {
         [Key]
         public int TextbookId { get; set; }
-
         [Required]
         public string Title { get; set; } = string.Empty;
         public string? Author { get; set; }
@@ -17,10 +16,8 @@ namespace SomaShare.Models
         public string? ImageUrl { get; set; }
         public bool IsAvailable { get; set; } = true;
         public DateTime DatePosted { get; set; } = DateTime.Now;
-
         public string SellerId { get; set; } = string.Empty;
         public ApplicationUser? Seller { get; set; }
-
         public ICollection<Offer> Offers { get; set; } = new List<Offer>();
     }
 }

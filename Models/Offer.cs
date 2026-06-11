@@ -9,7 +9,6 @@ namespace SomaShare.Models
         public decimal OfferAmount { get; set; }
         public string Status { get; set; } 
         public DateTime DateMade { get; set; }
-
         public int TextbookId { get; set; }
         public Textbook Textbook { get; set; }
 

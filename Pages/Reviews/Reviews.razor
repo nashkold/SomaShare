@@ -26,7 +26,7 @@
     }
     else
     {
-        @* ── Average score card ── *@
+        // Average score card
         @if (reviewsReceived.Any())
         {
             var avg = reviewsReceived.Average(r => r.Rating);
@@ -50,7 +50,7 @@
             </div>
         }
 
-        @* ── Tabs ── *@
+        // Tabs 
         <ul class="nav nav-tabs mb-4" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link @(activeTab == "received" ? "active" : "")"
@@ -80,7 +80,7 @@
             </li>
         </ul>
 
-        @* ── Reviews Received ── *@
+        // Reviews Received
         @if (activeTab == "received")
         {
             <div id="received-panel" role="tabpanel">
@@ -128,7 +128,7 @@
             </div>
         }
 
-        @* ── Reviews Given ── *@
+        // Reviews Given 
         @if (activeTab == "given")
         {
             <div id="given-panel" role="tabpanel">

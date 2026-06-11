@@ -7,9 +7,8 @@ namespace SomaShare.Models
         [Key]
         public int TransactionId { get; set; }
         public DateTime TransactionDate { get; set; }
-        public string PaymentMethod { get; set; } // "Cash on Meetup" etc.
+        public string PaymentMethod { get; set; } // Cash on Meetup
         public bool IsComplete { get; set; }
-
         public int OfferId { get; set; }
         public Offer Offer { get; set; }
     }

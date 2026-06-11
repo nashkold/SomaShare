@@ -1,14 +1,4 @@
-﻿@*
-    DASHBOARD PAGE
-    ══════════════
-    Route:   /dashboard
-    Access:  Logged-in users only (@attribute [Authorize])
-    Purpose: Shows the current user's Listings, Offers,
-             Transactions, and Reviews in one place.
-             Covers requirement 3.3 – User Dashboard.
-*@
-
-@page "/dashboard"
+﻿@page "/dashboard"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
@@ -24,19 +14,17 @@
 
 <div class="container mt-4 pb-5">
 
-    @* ── Page Header ────────────────────────────────────────────── *@
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h2 class="mb-0">👋 Welcome back, @currentUser?.FullName</h2>
             <p class="text-muted mb-0 small">@currentUser?.Email · @currentUser?.Campus</p>
         </div>
-        @* Trust Score badge — shows the live calculated score, not the stale DB column *@
+
         <div class="badge bg-warning text-dark fs-6 px-3 py-2">
             ⭐ Trust Score: @trustScore.ToString("0.0")
         </div>
     </div>
 
-    @* ── Loading Spinner ─────────────────────────────────────────── *@
     @if (isLoading)
     {
         <div class="text-center py-5">
@@ -46,11 +34,8 @@
     }
     else
     {
-        @* ── Summary Cards ─────────────────────────────────────────── *@
-        @* Seven quick-glance counters at the top of the dashboard     *@
         <div class="row g-3 mb-4">
 
-            @* — existing four cards — *@
             <div class="col-6 col-md-3">
                 <div class="card text-center border-primary h-100">
                     <div class="card-body py-3">
@@ -91,9 +76,6 @@
                 </div>
             </div>
 
-            @* — three NEW cards — *@
-
-            @* Pending Offers: how many of my submitted offers are still awaiting a seller response *@
             <div class="col-6 col-md-4">
                 <div class="card text-center border-orange h-100" style="border-color:#fd7e14!important">
                     <div class="card-body py-3">
@@ -104,7 +86,6 @@
                 </div>
             </div>
 
-            @* Completed Transactions: how many of my purchases have been fully finalised *@
             <div class="col-6 col-md-4">
                 <div class="card text-center h-100" style="border-color:#198754!important;border-width:2px;border-style:solid;">
                     <div class="card-body py-3">
@@ -115,7 +96,6 @@
                 </div>
             </div>
 
-            @* Trust Score: calculated by ReviewService — weighted average of star ratings + volume bonus *@
             <div class="col-12 col-md-4">
                 <div class="card text-center border-warning h-100">
                     <div class="card-body py-3">
@@ -123,7 +103,6 @@
                         <div class="fs-3 fw-bold text-warning">@trustScore.ToString("0.0")<small class="fs-6 text-muted">/100</small></div>
                         <div class="text-muted small">Trust Score</div>
 
-                        @* Thin progress bar so the score is also visual *@
                         <div class="progress mt-2" style="height:6px;" role="progressbar"
                              aria-valuenow="@((int)trustScore)" aria-valuemin="0" aria-valuemax="100"
                              aria-label="Trust score @trustScore.ToString("0.0") out of 100">
@@ -136,11 +115,6 @@
 
         </div>
 
-        @* ════════════════════════════════════════════════════════════
-           SECTION 1 — MY LISTINGS
-           Textbooks this user posted for sale.
-           SellerId links Textbook → ApplicationUser.
-        ════════════════════════════════════════════════════════════ *@
         <div class="card mb-4 shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">📚 My Listings</h5>
@@ -202,12 +176,6 @@
             </div>
         </div>
 
-        @* ════════════════════════════════════════════════════════════
-           SECTION 2 — MY OFFERS
-           Offers this user made on other people's listings.
-           BuyerId links Offer → ApplicationUser.
-           Status values: "Pending" | "Accepted" | "Rejected"
-        ════════════════════════════════════════════════════════════ *@
         <div class="card mb-4 shadow-sm">
             <div class="card-header">
                 <h5 class="mb-0">🤝 My Offers</h5>
@@ -235,12 +203,12 @@
                             <tbody>
                                 @foreach (var offer in myOffers)
                                 {
-                                    @* Pick badge colour based on offer status *@
+
                                     var badgeClass = offer.Status switch
                                     {
                                         "Accepted" => "bg-success",
                                         "Rejected" => "bg-danger",
-                                        _ => "bg-warning text-dark"   // Pending
+                                        _ => "bg-warning text-dark"   // Pending Status
                                     };
                                     <tr>
                                         <td class="fw-semibold">
@@ -264,12 +232,6 @@
             </div>
         </div>
 
-        @* ════════════════════════════════════════════════════════════
-           SECTION 3 — MY TRANSACTIONS
-           Transactions where this user was the buyer.
-           Transaction → Offer → Textbook (two levels of .Include())
-           PaymentMethod includes "Cash on Meetup" (Africanisation).
-        ════════════════════════════════════════════════════════════ *@
         <div class="card mb-4 shadow-sm">
             <div class="card-header">
                 <h5 class="mb-0">💳 My Transactions</h5>
@@ -321,11 +283,6 @@
             </div>
         </div>
 
-        @* ════════════════════════════════════════════════════════════
-           SECTION 4 — MY REVIEWS
-           Reviews other users wrote about this user (RevieweeId).
-           Shows star rating (1–5) and average score.
-        ════════════════════════════════════════════════════════════ *@
         <div class="card mb-4 shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">⭐ My Reviews</h5>
@@ -352,7 +309,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <strong>@(review.Reviewer?.FullName ?? "Anonymous")</strong>
                                     <span>
-                                        @* Render filled stars up to rating, empty stars after *@
+
                                         @for (int i = 1; i <= 5; i++)
                                         {
                                             <span class="@(i <= review.Rating ? "text-warning" : "text-muted")">
@@ -373,14 +330,12 @@
         </div>
 
     }
-    @* end else (not loading) *@
 
 </div>
 
 @code {
 
-    // ── Fields ────────────────────────────────────────────────────────
-    // These store the data fetched from the database.
+    // Fields, stores the data fetched from the database
     private ApplicationUser? currentUser = null;
     private List<Textbook> myListings = new();
     private List<Offer> myOffers = new();
@@ -388,25 +343,23 @@
     private List<Review> myReviews = new();
     private bool isLoading = true;
 
-    // ── New fields ────────────────────────────────────────────────────
-    // trustScore    – weighted rating out of 100, calculated by ReviewService
+    // New fields 
+    // trustScore    – weighted rating, calculated by ReviewService
     // pendingOffers – how many of my offers are still awaiting a seller response
-    // completedTransactions – how many of my purchases have been fully finalised
+    // completedTransactions – how many of my purchases have been fulfilled
     private double trustScore = 0;
     private int pendingOffers = 0;
     private int completedTransactions = 0;
 
-    // ── OnInitializedAsync ────────────────────────────────────────────
-    // Blazor calls this automatically when the page loads.
-    // It's async because database calls take time — we don't want
-    // the page to freeze while waiting.
+    // OnInitializedAsync
+    // Called automatically when the page loads
     protected override async Task OnInitializedAsync()
     {
         // Step 1: Find out who is currently logged in
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         currentUser = await UserManager.GetUserAsync(authState.User);
 
-        // Step 2: Guard — if nobody is logged in, redirect to login
+        // Step 2: If nobody is logged in, redirect to login
         if (currentUser == null)
         {
             NavigationManager.NavigateTo("/account/login", forceLoad: true);
@@ -419,35 +372,23 @@
         isLoading = false;
     }
 
-    // ── LoadDashboardData ─────────────────────────────────────────────
-    // Runs database queries for each dashboard section, then derives
-    // the three new computed values from the loaded lists.
-    //
-    // .Include()           = SQL JOIN (load a related table)
-    // .ThenInclude()       = JOIN a second level deep
-    // .Where()             = SQL WHERE (filter by current user)
-    // .OrderByDescending() = SQL ORDER BY … DESC
-    // .ToListAsync()       = execute the query and return a List<T>
-    //
+    // LoadDashboardData
     private async Task LoadDashboardData(string userId)
     {
-        // 1. Textbooks I posted (SellerId = me)
+        // Textbooks I posted 
         myListings = await Db.Textbooks
             .Where(t => t.SellerId == userId)
             .OrderByDescending(t => t.DatePosted)
             .ToListAsync();
 
-        // 2. Offers I made (BuyerId = me)
-        //    .Include(o => o.Textbook) loads the Textbook row
-        //    so we can display the book title in the table.
+        // Offers I made 
         myOffers = await Db.Offers
             .Include(o => o.Textbook)
             .Where(o => o.BuyerId == userId)
             .OrderByDescending(o => o.DateMade)
             .ToListAsync();
 
-        // 3. Transactions where I was the buyer
-        //    Two-level include:  Transaction → Offer → Textbook
+        // Transactions where I was the buyer
         myTransactions = await Db.Transactions
             .Include(t => t.Offer)
                 .ThenInclude(o => o.Textbook)
@@ -455,26 +396,20 @@
             .OrderByDescending(t => t.TransactionDate)
             .ToListAsync();
 
-        // 4. Reviews written ABOUT me (RevieweeId = me)
-        //    Include Reviewer so we can show their name.
+        // Reviews written about me
         myReviews = await Db.Reviews
             .Include(r => r.Reviewer)
             .Where(r => r.RevieweeId == userId)
             .OrderByDescending(r => r.DatePosted)
             .ToListAsync();
 
-        // ── Derived / computed values ─────────────────────────────────
-
-        // Trust score — delegated to ReviewService so the formula lives
-        // in one place and can be reused by other pages (e.g. Profile).
+        // Trust score, can be reused by other pages
         trustScore = await ReviewService.CalculateTrustScoreAsync(userId);
 
-        // Count how many of my submitted offers are still waiting on a seller.
-        // Derived from the already-loaded myOffers list — no extra DB hit needed.
+        // Count how many of my submitted offers are still waiting on a seller
         pendingOffers = myOffers.Count(o => o.Status == "Pending");
 
-        // Count how many of my purchases have been fully finalised.
-        // Derived from the already-loaded myTransactions list.
+        // Count how many of my purchases have been fully finalised
         completedTransactions = myTransactions.Count(t => t.IsComplete);
     }
 }

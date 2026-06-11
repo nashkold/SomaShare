@@ -29,7 +29,7 @@ namespace SomaShare.Services
             await _context.SaveChangesAsync();
         }
 
-        // Delete a wanted ad by id
+        // Delete a wanted ad 
         public async Task DeleteAsync(int id)
         {
             var ad = await _context.WantedAds.FindAsync(id);

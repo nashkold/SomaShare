@@ -30,7 +30,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Register our custom services so Blazor pages can use them via @inject
+// Registers custom services so pages can use them via @inject
 builder.Services.AddScoped<ITextbookService, TextbookService>();
 builder.Services.AddScoped<IOfferService, OfferService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();

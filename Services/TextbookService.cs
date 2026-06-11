@@ -13,6 +13,7 @@ namespace SomaShare.Services
             _context = context;
         }
 
+        // List Textbook
         public async Task<List<Textbook>> GetAllAsync()
         {
             return await _context.Textbooks
@@ -27,18 +28,21 @@ namespace SomaShare.Services
                 .FirstOrDefaultAsync(t => t.TextbookId == id);
         }
 
+        // Create Textbook
         public async Task CreateAsync(Textbook textbook)
         {
             _context.Textbooks.Add(textbook);
             await _context.SaveChangesAsync();
         }
 
+        // Update Textbook
         public async Task UpdateAsync(Textbook textbook)
         {
             _context.Textbooks.Update(textbook);
             await _context.SaveChangesAsync();
         }
 
+        // Delete Textbook (only if user is the seller)
         public async Task DeleteAsync(int id, string userId)
         {
             var textbook = await _context.Textbooks.FindAsync(id);
